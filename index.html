@@ -3,281 +3,238 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BONK BAG</title>
-<style>
-  body {
-    background-image: url('cosmic-bonkpet-bg.jpg'); /* Назва твого згенерованого фону */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    margin: 0;
-    padding: 0;
-    font-family: 'Arial', sans-serif;
-    color: white;
-  }
-
-  .bonus-box, .pet-card, #market, #fightSection, #leaderboardSection {
-    background-color: rgba(0, 0, 0, 0.6);
-    padding: 15px;
-    border-radius: 10px;
-    margin: 20px;
-  }
-
-  button.btn {
-    background-color: #00cc66;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-
-  button.btn:hover {
-    background-color: #00aa55;
-  }
-</style>
+  <title>BONK PET</title>
+  <style>
+    body {
+      margin: 0;
+      background: url('cosmic-bonkpet-bg.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: row;
+    }
+    .sidebar {
+      width: 220px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .main {
+      flex-grow: 1;
+      padding: 20px;
+    }
+    .section {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+    }
+    .btn {
+      background: limegreen;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      margin: 8px 0;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #4fff4f;
+    }
+    img.pet {
+      width: 100px;
+      height: 100px;
+    }
+  </style>
 </head>
 <body>
-  <h1>🐾 BONK PET</h1>
-
-  <div class="pet-box" id="petBox">
-    <h2>Твій пес</h2>
-    <div id="petInfo"></div>
-    <div id="dailyBonus"></div>
-  </div>
-
-  <div class="bonus-box" id="boxSection">
-    <h2>📦 Відкрити бокс</h2>
-    <p>Коштує 100 000 BAG</p>
-    <button class="btn" onclick="openBox()">🎁 Відкрити</button>
-    <div id="boxResult" style="margin-top: 15px;"></div>
-  </div>
-
-  <div class="bonus-box" id="marketSection">
-    <h2>🏪 Ринок псів</h2>
-    <div id="marketList"></div>
-  </div>
-
-  <div class="bonus-box" id="fightSection">
-    <h2>🥊 Змагайся з іншим псом</h2>
-    <button class="btn" onclick="fight()">⚔️ Змагатися</button>
-    <div id="fightResult" style="margin-top: 10px;"></div>
-  </div>
-
-  <div class="bonus-box" id="leaderboardSection">
-    <h2>🏆 Таблиця лідерів</h2>
-    <div id="leaderboardList"></div>
-  </div>
-
-<script>
-const dogTypes = [
-  { name: "Простий Пес", type: "звичайний", image: "https://i.ibb.co/0qZ5F3N/basicdog.png", price: 100000 },
-  { name: "Унікальний Пес", type: "унікальний", image: "https://i.ibb.co/XpzLjrh/uniquedog.png", price: 500000 },
-  { name: "Рідкісний Пес", type: "рідкісний", image: "https://i.ibb.co/0CMn57x/raredog.png", price: 1000000 },
-  { name: "Легендарний Пес", type: "легендарний", image: "https://i.ibb.co/kBcFD40/legenddog.png", price: 10000000 }
-];
-
-function generateWallet() {
-  return "0x" + Math.random().toString(36).substring(2, 15);
-}
-
-function loadOrCreateDog() {
-  let dog = JSON.parse(localStorage.getItem("myDog"));
-  if (!dog) {
-    dog = { ...dogTypes[0], xp: 0, level: 1, bag: 100000, wallet: generateWallet(), lastBonus: 0, loginDays: 0 };
-    localStorage.setItem("myDog", JSON.stringify(dog));
-  }
-  renderDog(dog);
-}
-
-function renderDog(dog) {
-  document.getElementById("petInfo").innerHTML = `
-    <img src="${dog.image}" width="150"/><br>
-    <b>${dog.name}</b> (${dog.type})<br>
-    🧪 XP: ${dog.xp}<br>
-    📈 Level: ${dog.level}<br>
-    💰 BAG: ${dog.bag.toLocaleString()}<br>
-    👛 Wallet: ${dog.wallet.slice(0,6)}...${dog.wallet.slice(-4)}
-  `;
-}
-
-function grantDailyBonus() {
-  let dog = JSON.parse(localStorage.getItem("myDog"));
-  const now = Date.now();
-  const day = Math.floor(now / (1000 * 60 * 60 * 24));
-
-  if (day === dog.lastBonus) {
-    document.getElementById("dailyBonus").innerHTML = "<p>🎁 Бонус вже отримано сьогодні!</p>";
-    return;
-  }
-
-  dog.loginDays += 1;
-  dog.lastBonus = day;
-
-  let bonusBag = 5000;
-  if (dog.loginDays >= 10) bonusBag += 10000;
-  if (dog.loginDays >= 20) bonusBag += 20000;
-  if (dog.loginDays >= 30) bonusBag += 30000;
-  if (dog.loginDays >= 40) bonusBag += 40000;
-  if (dog.loginDays >= 50) bonusBag += 50000;
-  if (dog.loginDays >= 60) bonusBag += 60000;
-  if (dog.loginDays >= 70) bonusBag += 70000;
-  if (dog.loginDays >= 80) bonusBag += 80000;
-  if (dog.loginDays >= 90) bonusBag += 90000;
-  if (dog.loginDays >= 100) bonusBag += 100000;
-
-  dog.bag += bonusBag;
-  dog.xp += 20 + Math.floor(Math.random() * 30);
-  dog.level = Math.floor(dog.xp / 100) + 1;
-
-  localStorage.setItem("myDog", JSON.stringify(dog));
-  renderDog(dog);
-
-  document.getElementById("dailyBonus").innerHTML = `
-    <p>🎉 Ти отримав <b>${bonusBag.toLocaleString()} BAG</b> за вхід!</p>
-    <p>День входу: ${dog.loginDays}</p>
-  `;
-}
-
-function openBox() {
-  let dog = JSON.parse(localStorage.getItem("myDog"));
-  const boxCost = 100000;
-  if (dog.bag < boxCost) {
-    document.getElementById("boxResult").innerText = "🚫 Недостатньо BAG.";
-    return;
-  }
-  dog.bag -= boxCost;
-
-  const roll = Math.random();
-  let newDog;
-  if (roll < 0.6) newDog = dogTypes[0];
-  else if (roll < 0.85) newDog = dogTypes[1];
-  else if (roll < 0.98) newDog = dogTypes[2];
-  else newDog = dogTypes[3];
-
-  const earned = { ...newDog, xp: 0, level: 1, bag: 0, wallet: generateWallet() };
-  const market = JSON.parse(localStorage.getItem("market") || "[]");
-  market.push(earned);
-  localStorage.setItem("market", JSON.stringify(market));
-
-  localStorage.setItem("myDog", JSON.stringify(dog));
-  renderDog(dog);
-
-  document.getElementById("boxResult").innerHTML = `
-    <p>🎉 Тобі випав:</p>
-    <img src="${earned.image}" width="120"/><br>
-    <b>${earned.name}</b> (${earned.type})<br>
-    Додано на ринок!
-  `;
-  renderMarket();
-}
-
-function renderMarket() {
-  const market = JSON.parse(localStorage.getItem("market") || "[]");
-  const container = document.getElementById("marketList");
-  container.innerHTML = market.map((p, i) => `
-    <div style="margin:10px;padding:10px;border:1px solid #333;border-radius:8px;">
-      <img src="${p.image}" width="100"/><br>
-      <b>${p.name}</b> (${p.type})<br>
-      Level: ${p.level} | XP: ${p.xp}<br>
-      💰 ${p.price.toLocaleString()} BAG<br>
-      <button class="btn" onclick="buyDog(${i})">Купити</button>
+  <div class="container">
+    <div class="sidebar">
+      <h3>💼 Баланс</h3>
+      <p>BAG: <span id="balBag">0</span></p>
+      <p>POL: <span id="balPol">0</span></p>
+      <p>USDT: <span id="balUsdt">0</span></p>
+      <p>👛 <span id="walletShort">-</span></p>
     </div>
-  `).join('');
-}
+    <div class="main">
+      <div class="section" id="bonusMarketSection">
+        <h2>🎁 Бонус + 🏪 Ринок</h2>
+        <button class="btn" onclick="claimBonus()">Отримати бонус</button>
+        <p id="bonusMessage"></p>
+        <button class="btn" onclick="openBox()">Відкрити бокс</button>
+        <p id="boxResult"></p>
+        <h4>Придбати пса</h4>
+        <button class="btn" onclick="buyDog('common')">Звичайний — 100,000 BAG</button>
+        <button class="btn" onclick="buyDog('unique')">Унікальний — 500,000 BAG</button>
+        <button class="btn" onclick="buyDog('rare')">Рідкісний — 1,000,000 BAG</button>
+        <button class="btn" onclick="buyDog('legend')">Легенда — 10,000,000 BAG</button>
+        <div id="marketList"></div>
+      </div>      <div class="section" id="myPetSection">
+        <h2>🐶 Мій пес</h2>
+        <div id="myPetInfo"></div>
+        <p id="dailyPowerUpMsg"></p>
+        <button class="btn" onclick="getPowerUp()">Прокачати сьогодні</button>
+      </div>
 
-function buyDog(index) {
-  let dog = JSON.parse(localStorage.getItem("myDog"));
-  const market = JSON.parse(localStorage.getItem("market") || "[]");
-  const pet = market[index];
-  if (!pet) return;
-  if (dog.bag < pet.price) {
-    alert("Недостатньо BAG!");
-    return;
-  }
-  dog.bag -= pet.price;
-  alert(`✅ Куплено ${pet.name} (${pet.type})! XP: ${pet.xp}`);
+      <div class="section" id="fightSection">
+        <h2>🥊 Змагання</h2>
+        <button class="btn" onclick="fight()">Битись!</button>
+        <div id="fightResult"></div>
+      </div>
 
-  market.splice(index, 1);
-  localStorage.setItem("market", JSON.stringify(market));
-  localStorage.setItem("myDog", JSON.stringify(dog));
-  renderDog(dog);
-  renderMarket();
-}
+      <div class="section" id="leaderboardSection">
+        <h2>🏆 Таблиця лідерів</h2>
+        <div id="leaderboardList"></div>
+      </div>
+    </div>
+  </div>
 
-function fight() {
-  const myDog = JSON.parse(localStorage.getItem("myDog"));
-  const market = JSON.parse(localStorage.getItem("market") || "[]");
-  if (market.length === 0) {
-    document.getElementById("fightResult").innerText = "Немає суперників!";
-    return;
-  }
-  const opponent = market[Math.floor(Math.random() * market.length)];
-  const myPower = myDog.xp + Math.random() * 50;
-  const enemyPower = opponent.xp + Math.random() * 50;
+  <script>
+    // Ініціалізація даних
+    let user = JSON.parse(localStorage.getItem("bonkUser")) || {
+      wallet: "0x" + Math.random().toString(16).substr(2, 8),
+      bag: 100000,
+      pol: 2.0,
+      usdt: 50.0,
+      pet: { name: "Bonk Dog", level: 1, power: 10, rarity: "common" },
+      lastBonusDay: 0,
+      bonusStreak: 0,
+      lastPowerUp: "",
+      leaderboard: []
+    };
 
-  let result;
-  if (myPower > enemyPower) {
-    myDog.xp += 30;
-    myDog.bag += 10000;
-    myDog.level = Math.floor(myDog.xp / 100) + 1;
-    result = `🏆 Ти переміг ${opponent.name}! +30 XP, +10 000 BAG`;
-  } else {
-    result = `😓 ${opponent.name} переміг тебе. Спробуй ще раз!`;
-  }
-  localStorage.setItem("myDog", JSON.stringify(myDog));
-  renderDog(myDog);
-  document.getElementById("fightResult").innerText = result;
-  updateLeaderboard();
-}
+    function saveUser() {
+      localStorage.setItem("bonkUser", JSON.stringify(user));
+      renderAll();
+    }
 
-function updateLeaderboard() {
-  const dog = JSON.parse(localStorage.getItem("myDog"));
-  let leaderboard = JSON.parse(localStorage.getItem("leaderboard") || "[]");
+    function renderAll() {
+      document.getElementById("balBag").innerText = user.bag.toLocaleString();
+      document.getElementById("balPol").innerText = user.pol.toFixed(2);
+      document.getElementById("balUsdt").innerText = user.usdt.toFixed(2);
+      document.getElementById("walletShort").innerText = user.wallet;
 
-  const existing = leaderboard.find(p => p.wallet === dog.wallet);
-  if (existing) {
-    existing.name = dog.name;
-    existing.xp = dog.xp;
-    existing.level = dog.level;
-  } else {
-    leaderboard.push({
-      wallet: dog.wallet,
-      name: dog.name,
-      xp: dog.xp,
-      level: dog.level
-    });
-  }
-  leaderboard.sort((a, b) => b.xp - a.xp);
-  localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
-  renderLeaderboard();
-}
+      document.getElementById("myPetInfo").innerHTML =
+        `<p>🐕 ${user.pet.name} — Lv. ${user.pet.level} — 💥 ${user.pet.power} — 🎖️ ${user.pet.rarity}</p>`;
 
-function renderLeaderboard() {
-  const leaderboard = JSON.parse(localStorage.getItem("leaderboard") || "[]");
-  const container = document.getElementById("leaderboardList");
-  if (!container) return;
+      renderLeaderboard();
+    }    function claimBonus() {
+      const today = new Date().toISOString().slice(0, 10);
+      if (user.lastBonusDay === today) {
+        document.getElementById("bonusMessage").innerText = "Бонус вже отримано сьогодні!";
+        return;
+      }
 
-  if (leaderboard.length === 0) {
-    container.innerHTML = "<p>Наразі таблиця порожня.</p>";
-    return;
-  }
+      user.lastBonusDay = today;
+      user.bonusStreak += 1;
 
-  let html = "<ol>";
-  leaderboard.forEach(player => {
-    html += `<li><b>${player.name}</b> – ${player.xp} XP (Lvl ${player.level})</li>`;
-  });
-  html += "</ol>";
-  container.innerHTML = html;
-}
+      let reward = 1000;
+      if (user.bonusStreak >= 10) reward += 10000;
+      if (user.bonusStreak >= 20) reward += 25000;
+      if (user.bonusStreak >= 30) reward += 50000;
+      if (user.bonusStreak >= 40) reward += 100000;
+      if (user.bonusStreak >= 50) reward += 150000;
+      if (user.bonusStreak >= 100) reward += 250000;
 
-window.onload = () => {
-  loadOrCreateDog();
-  grantDailyBonus();
-  renderMarket();
-  renderLeaderboard();
-};
-</script>
+      user.bag += reward;
+      document.getElementById("bonusMessage").innerText = `🎉 Ви отримали ${reward.toLocaleString()} BAG!`;
+      saveUser();
+    }
+
+    function getPowerUp() {
+      const today = new Date().toISOString().slice(0, 10);
+      if (user.lastPowerUp === today) {
+        document.getElementById("dailyPowerUpMsg").innerText = "Сьогодні вже прокачано!";
+        return;
+      }
+
+      const bonuses = [
+        { stat: "power", value: 2 },
+        { stat: "level", value: 1 },
+        { stat: "bag", value: 500 }
+      ];
+      const choice = bonuses[Math.floor(Math.random() * bonuses.length)];
+
+      if (choice.stat === "power") user.pet.power += choice.value;
+      if (choice.stat === "level") user.pet.level += choice.value;
+      if (choice.stat === "bag") user.bag += choice.value;
+
+      user.lastPowerUp = today;
+      document.getElementById("dailyPowerUpMsg").innerText = `+${choice.value} до ${choice.stat.toUpperCase()}`;
+      saveUser();
+    }
+
+    function openBox() {
+      const types = ["common", "unique", "rare", "legend"];
+      const rand = Math.random();
+      let rarity = "common";
+      if (rand > 0.98) rarity = "legend";
+      else if (rand > 0.9) rarity = "rare";
+      else if (rand > 0.7) rarity = "unique";
+
+      document.getElementById("boxResult").innerText = `📦 Ви отримали ${rarity.toUpperCase()} пса!`;
+    }
+
+    function buyDog(type) {
+      const prices = {
+        common: 100000,
+        unique: 500000,
+        rare: 1000000,
+        legend: 10000000
+      };
+
+      if (user.bag < prices[type]) {
+        alert("Недостатньо BAG!");
+        return;
+      }
+
+      user.bag -= prices[type];
+      user.pet = {
+        name: `BONK ${type.toUpperCase()} DOG`,
+        level: 1,
+        power: 10 + Math.floor(Math.random() * 10),
+        rarity: type
+      };
+      alert(`Ви купили нового пса: ${user.pet.name}`);
+      saveUser();
+    }
+
+    function fight() {
+      const win = Math.random() < 0.5 + user.pet.level * 0.01;
+      let msg = "";
+      if (win) {
+        const reward = 1000 + user.pet.power * 10;
+        user.bag += reward;
+        msg = `🥇 Ви виграли! Нагорода: ${reward} BAG`;
+      } else {
+        msg = `😵 Ви програли.`;
+      }
+      document.getElementById("fightResult").innerText = msg;
+      updateLeaderboard();
+      saveUser();
+    }
+
+    function updateLeaderboard() {
+      const board = JSON.parse(localStorage.getItem("bonkLeaderboard")) || [];
+      board.push({ name: user.wallet, score: user.pet.level * 100 + user.pet.power });
+      board.sort((a, b) => b.score - a.score);
+      localStorage.setItem("bonkLeaderboard", JSON.stringify(board.slice(0, 10)));
+    }
+
+    function renderLeaderboard() {
+      const board = JSON.parse(localStorage.getItem("bonkLeaderboard")) || [];
+      document.getElementById("leaderboardList").innerHTML = board.map(
+        (entry, index) => `<p>${index + 1}. ${entry.name} — ${entry.score}</p>`
+      ).join("");
+    }
+
+    window.onload = () => {
+      renderAll();
+    };
+  </script>
 </body>
 </html>
