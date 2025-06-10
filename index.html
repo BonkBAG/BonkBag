@@ -1,9 +1,283 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>BonkBAG</title>
-  </head>
-  <body>
-    <h1>BonkBAG site is active</h1>
-  </body>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BONK PET</title>
+  <style>
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .pet-box, .bonus-box {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px auto;
+      max-width: 400px;
+    }
+    img {
+      border-radius: 8px;
+    }
+    .btn {
+      background: limegreen;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      margin: 8px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #4fff4f;
+    }
+    ol { text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>🐾 BONK PET</h1>
+
+  <div class="pet-box" id="petBox">
+    <h2>Твій пес</h2>
+    <div id="petInfo"></div>
+    <div id="dailyBonus"></div>
+  </div>
+
+  <div class="bonus-box" id="boxSection">
+    <h2>📦 Відкрити бокс</h2>
+    <p>Коштує 100 000 BAG</p>
+    <button class="btn" onclick="openBox()">🎁 Відкрити</button>
+    <div id="boxResult" style="margin-top: 15px;"></div>
+  </div>
+
+  <div class="bonus-box" id="marketSection">
+    <h2>🏪 Ринок псів</h2>
+    <div id="marketList"></div>
+  </div>
+
+  <div class="bonus-box" id="fightSection">
+    <h2>🥊 Змагайся з іншим псом</h2>
+    <button class="btn" onclick="fight()">⚔️ Змагатися</button>
+    <div id="fightResult" style="margin-top: 10px;"></div>
+  </div>
+
+  <div class="bonus-box" id="leaderboardSection">
+    <h2>🏆 Таблиця лідерів</h2>
+    <div id="leaderboardList"></div>
+  </div>
+
+<script>
+const dogTypes = [
+  { name: "Простий Пес", type: "звичайний", image: "https://i.ibb.co/0qZ5F3N/basicdog.png", price: 100000 },
+  { name: "Унікальний Пес", type: "унікальний", image: "https://i.ibb.co/XpzLjrh/uniquedog.png", price: 500000 },
+  { name: "Рідкісний Пес", type: "рідкісний", image: "https://i.ibb.co/0CMn57x/raredog.png", price: 1000000 },
+  { name: "Легендарний Пес", type: "легендарний", image: "https://i.ibb.co/kBcFD40/legenddog.png", price: 10000000 }
+];
+
+function generateWallet() {
+  return "0x" + Math.random().toString(36).substring(2, 15);
+}
+
+function loadOrCreateDog() {
+  let dog = JSON.parse(localStorage.getItem("myDog"));
+  if (!dog) {
+    dog = { ...dogTypes[0], xp: 0, level: 1, bag: 100000, wallet: generateWallet(), lastBonus: 0, loginDays: 0 };
+    localStorage.setItem("myDog", JSON.stringify(dog));
+  }
+  renderDog(dog);
+}
+
+function renderDog(dog) {
+  document.getElementById("petInfo").innerHTML = `
+    <img src="${dog.image}" width="150"/><br>
+    <b>${dog.name}</b> (${dog.type})<br>
+    🧪 XP: ${dog.xp}<br>
+    📈 Level: ${dog.level}<br>
+    💰 BAG: ${dog.bag.toLocaleString()}<br>
+    👛 Wallet: ${dog.wallet.slice(0,6)}...${dog.wallet.slice(-4)}
+  `;
+}
+
+function grantDailyBonus() {
+  let dog = JSON.parse(localStorage.getItem("myDog"));
+  const now = Date.now();
+  const day = Math.floor(now / (1000 * 60 * 60 * 24));
+
+  if (day === dog.lastBonus) {
+    document.getElementById("dailyBonus").innerHTML = "<p>🎁 Бонус вже отримано сьогодні!</p>";
+    return;
+  }
+
+  dog.loginDays += 1;
+  dog.lastBonus = day;
+
+  let bonusBag = 5000;
+  if (dog.loginDays >= 10) bonusBag += 10000;
+  if (dog.loginDays >= 20) bonusBag += 20000;
+  if (dog.loginDays >= 30) bonusBag += 30000;
+  if (dog.loginDays >= 40) bonusBag += 40000;
+  if (dog.loginDays >= 50) bonusBag += 50000;
+  if (dog.loginDays >= 60) bonusBag += 60000;
+  if (dog.loginDays >= 70) bonusBag += 70000;
+  if (dog.loginDays >= 80) bonusBag += 80000;
+  if (dog.loginDays >= 90) bonusBag += 90000;
+  if (dog.loginDays >= 100) bonusBag += 100000;
+
+  dog.bag += bonusBag;
+  dog.xp += 20 + Math.floor(Math.random() * 30);
+  dog.level = Math.floor(dog.xp / 100) + 1;
+
+  localStorage.setItem("myDog", JSON.stringify(dog));
+  renderDog(dog);
+
+  document.getElementById("dailyBonus").innerHTML = `
+    <p>🎉 Ти отримав <b>${bonusBag.toLocaleString()} BAG</b> за вхід!</p>
+    <p>День входу: ${dog.loginDays}</p>
+  `;
+}
+
+function openBox() {
+  let dog = JSON.parse(localStorage.getItem("myDog"));
+  const boxCost = 100000;
+  if (dog.bag < boxCost) {
+    document.getElementById("boxResult").innerText = "🚫 Недостатньо BAG.";
+    return;
+  }
+  dog.bag -= boxCost;
+
+  const roll = Math.random();
+  let newDog;
+  if (roll < 0.6) newDog = dogTypes[0];
+  else if (roll < 0.85) newDog = dogTypes[1];
+  else if (roll < 0.98) newDog = dogTypes[2];
+  else newDog = dogTypes[3];
+
+  const earned = { ...newDog, xp: 0, level: 1, bag: 0, wallet: generateWallet() };
+  const market = JSON.parse(localStorage.getItem("market") || "[]");
+  market.push(earned);
+  localStorage.setItem("market", JSON.stringify(market));
+
+  localStorage.setItem("myDog", JSON.stringify(dog));
+  renderDog(dog);
+
+  document.getElementById("boxResult").innerHTML = `
+    <p>🎉 Тобі випав:</p>
+    <img src="${earned.image}" width="120"/><br>
+    <b>${earned.name}</b> (${earned.type})<br>
+    Додано на ринок!
+  `;
+  renderMarket();
+}
+
+function renderMarket() {
+  const market = JSON.parse(localStorage.getItem("market") || "[]");
+  const container = document.getElementById("marketList");
+  container.innerHTML = market.map((p, i) => `
+    <div style="margin:10px;padding:10px;border:1px solid #333;border-radius:8px;">
+      <img src="${p.image}" width="100"/><br>
+      <b>${p.name}</b> (${p.type})<br>
+      Level: ${p.level} | XP: ${p.xp}<br>
+      💰 ${p.price.toLocaleString()} BAG<br>
+      <button class="btn" onclick="buyDog(${i})">Купити</button>
+    </div>
+  `).join('');
+}
+
+function buyDog(index) {
+  let dog = JSON.parse(localStorage.getItem("myDog"));
+  const market = JSON.parse(localStorage.getItem("market") || "[]");
+  const pet = market[index];
+  if (!pet) return;
+  if (dog.bag < pet.price) {
+    alert("Недостатньо BAG!");
+    return;
+  }
+  dog.bag -= pet.price;
+  alert(`✅ Куплено ${pet.name} (${pet.type})! XP: ${pet.xp}`);
+
+  market.splice(index, 1);
+  localStorage.setItem("market", JSON.stringify(market));
+  localStorage.setItem("myDog", JSON.stringify(dog));
+  renderDog(dog);
+  renderMarket();
+}
+
+function fight() {
+  const myDog = JSON.parse(localStorage.getItem("myDog"));
+  const market = JSON.parse(localStorage.getItem("market") || "[]");
+  if (market.length === 0) {
+    document.getElementById("fightResult").innerText = "Немає суперників!";
+    return;
+  }
+  const opponent = market[Math.floor(Math.random() * market.length)];
+  const myPower = myDog.xp + Math.random() * 50;
+  const enemyPower = opponent.xp + Math.random() * 50;
+
+  let result;
+  if (myPower > enemyPower) {
+    myDog.xp += 30;
+    myDog.bag += 10000;
+    myDog.level = Math.floor(myDog.xp / 100) + 1;
+    result = `🏆 Ти переміг ${opponent.name}! +30 XP, +10 000 BAG`;
+  } else {
+    result = `😓 ${opponent.name} переміг тебе. Спробуй ще раз!`;
+  }
+  localStorage.setItem("myDog", JSON.stringify(myDog));
+  renderDog(myDog);
+  document.getElementById("fightResult").innerText = result;
+  updateLeaderboard();
+}
+
+function updateLeaderboard() {
+  const dog = JSON.parse(localStorage.getItem("myDog"));
+  let leaderboard = JSON.parse(localStorage.getItem("leaderboard") || "[]");
+
+  const existing = leaderboard.find(p => p.wallet === dog.wallet);
+  if (existing) {
+    existing.name = dog.name;
+    existing.xp = dog.xp;
+    existing.level = dog.level;
+  } else {
+    leaderboard.push({
+      wallet: dog.wallet,
+      name: dog.name,
+      xp: dog.xp,
+      level: dog.level
+    });
+  }
+  leaderboard.sort((a, b) => b.xp - a.xp);
+  localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  const leaderboard = JSON.parse(localStorage.getItem("leaderboard") || "[]");
+  const container = document.getElementById("leaderboardList");
+  if (!container) return;
+
+  if (leaderboard.length === 0) {
+    container.innerHTML = "<p>Наразі таблиця порожня.</p>";
+    return;
+  }
+
+  let html = "<ol>";
+  leaderboard.forEach(player => {
+    html += `<li><b>${player.name}</b> – ${player.xp} XP (Lvl ${player.level})</li>`;
+  });
+  html += "</ol>";
+  container.innerHTML = html;
+}
+
+window.onload = () => {
+  loadOrCreateDog();
+  grantDailyBonus();
+  renderMarket();
+  renderLeaderboard();
+};
+</script>
+</body>
 </html>
