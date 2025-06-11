@@ -6,235 +6,261 @@
   <title>BONK PET</title>
   <style>
     body {
+      font-family: 'Arial', sans-serif;
       margin: 0;
-      background: url('cosmic-bonkpet-bg.jpg') no-repeat center center fixed;
+      padding: 0;
+      background-image: url('background.jpg');
       background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
       color: white;
-      font-family: Arial, sans-serif;
     }
-    .container {
+    .section { display: none; padding: 20px; }
+    .active { display: block; }
+    .nav {
       display: flex;
-      flex-direction: row;
+      justify-content: space-between;
+      padding: 10px;
+      background: rgba(0,0,0,0.6);
     }
-    .sidebar {
-      width: 220px;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .main {
-      flex-grow: 1;
-      padding: 20px;
-    }
-    .section {
-      background: rgba(0, 0, 0, 0.6);
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 10px;
-    }
-    .btn {
-      background: limegreen;
-      color: #000;
+    .nav button {
+      background: #00cc66;
       border: none;
-      padding: 10px 20px;
-      margin: 8px 0;
-      font-weight: bold;
-      border-radius: 8px;
+      padding: 10px 15px;
+      color: white;
       cursor: pointer;
+      margin-right: 10px;
     }
-    .btn:hover {
-      background: #4fff4f;
+    .nav button:hover { background: #00994d; }
+    .btn {
+      background: #00b386;
+      padding: 8px 12px;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin: 5px 0;
     }
-    img.pet {
-      width: 100px;
-      height: 100px;
+    .btn:hover { background: #008060; }
+    .token-balances {
+      padding: 10px;
+      background: rgba(255,255,255,0.1);
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="sidebar">
-      <h3>💼 Баланс</h3>
-      <p>BAG: <span id="balBag">0</span></p>
-      <p>POL: <span id="balPol">0</span></p>
-      <p>USDT: <span id="balUsdt">0</span></p>
-      <p>👛 <span id="walletShort">-</span></p>
+  <div class="nav">
+    <div>
+      <button onclick="showSection('walletSection')">👛 Гаманець</button>
+      <button onclick="showSection('bonusSection')">🎁 Бонуси</button>
+      <button onclick="showSection('marketSection')">📦 Ринок</button>
+      <button onclick="showSection('myDogSection')">🐶 Мій пес</button>
+      <button onclick="showSection('battleSection')">🏆 Змагання</button>
     </div>
-    <div class="main">
-      <div class="section" id="bonusMarketSection">
-        <h2>🎁 Бонус + 🏪 Ринок</h2>
-        <button class="btn" onclick="claimBonus()">Отримати бонус</button>
-        <p id="bonusMessage"></p>
-        <button class="btn" onclick="openBox()">Відкрити бокс</button>
-        <p id="boxResult"></p>
-        <h4>Придбати пса</h4>
-        <button class="btn" onclick="buyDog('common')">Звичайний — 100,000 BAG</button>
-        <button class="btn" onclick="buyDog('unique')">Унікальний — 500,000 BAG</button>
-        <button class="btn" onclick="buyDog('rare')">Рідкісний — 1,000,000 BAG</button>
-        <button class="btn" onclick="buyDog('legend')">Легенда — 10,000,000 BAG</button>
-        <div id="marketList"></div>
-      </div>      <div class="section" id="myPetSection">
-        <h2>🐶 Мій пес</h2>
-        <div id="myPetInfo"></div>
-        <p id="dailyPowerUpMsg"></p>
-        <button class="btn" onclick="getPowerUp()">Прокачати сьогодні</button>
-      </div>
+    <div>
+      <input type="email" id="emailInput" placeholder="Введіть email" />
+      <button onclick="registerEmail()">Увійти</button>
+    </div>
+  </div>
 
-      <div class="section" id="fightSection">
-        <h2>🥊 Змагання</h2>
-        <button class="btn" onclick="fight()">Битись!</button>
-        <div id="fightResult"></div>
-      </div>
-
-      <div class="section" id="leaderboardSection">
-        <h2>🏆 Таблиця лідерів</h2>
-        <div id="leaderboardList"></div>
+  <div id="walletSection" class="section">
+    <h2>👛 Гаманець</h2>
+    <div class="token-balances">
+      <p><strong>BAG:</strong> <span id="balanceBAG">0</span></p>
+      <p><strong>POL:</strong> <span id="balancePOL">0</span></p>
+      <p><strong>USDT:</strong> <span id="balanceUSDT">0</span></p>
+    </div>
+    <div>
+      <button class="btn" onclick="depositTokens()">➕ Ввести токени</button>
+      <button class="btn" onclick="withdrawTokens()">➖ Вивести токени</button>
+      <div>
+        <p><strong>QR код адреси:</strong></p>
+        <canvas id="qrCanvas"></canvas>
       </div>
     </div>
   </div>
 
-  <script>
-    // Ініціалізація даних
-    let user = JSON.parse(localStorage.getItem("bonkUser")) || {
-      wallet: "0x" + Math.random().toString(16).substr(2, 8),
-      bag: 100000,
-      pol: 2.0,
-      usdt: 50.0,
-      pet: { name: "Bonk Dog", level: 1, power: 10, rarity: "common" },
-      lastBonusDay: 0,
-      bonusStreak: 0,
-      lastPowerUp: "",
-      leaderboard: []
-    };
+  <div id="bonusSection" class="section">
+    <h2>🎁 Бонуси</h2>
+    <p>Щодня ви можете отримувати нагороду за вхід!</p>
+    <button class="btn" onclick="claimDailyBonus()">Отримати бонус</button>
+    <p id="bonusMessage"></p>
+  </div>  <div id="marketSection" class="section">
+    <h2>📦 Ринок</h2>
+    <p>Купити / Продати пса</p>
+    <div>
+      <label>Дія:</label>
+      <select id="marketAction">
+        <option value="buy">Купити</option>
+        <option value="sell">Продати</option>
+      </select>
+      <label>Рідкість:</label>
+      <select id="raritySelect">
+        <option value="normal">Простий — 100 000 BAG</option>
+        <option value="unique">Унікальний — 500 000 BAG</option>
+        <option value="rare">Рідкісний — 1 000 000 BAG</option>
+        <option value="legendary">Легенда — 10 000 000 BAG</option>
+      </select>
+      <button class="btn" onclick="performMarketAction()">Підтвердити</button>
+    </div>
+    <p id="marketMessage"></p>
+  </div>
 
-    function saveUser() {
-      localStorage.setItem("bonkUser", JSON.stringify(user));
-      renderAll();
-    }
+  <div id="myDogSection" class="section">
+    <h2>🐶 Мій пес</h2>
+    <div id="myDogsList">
+      <p>Ви ще не маєте пса.</p>
+    </div>
+  </div>
 
-    function renderAll() {
-      document.getElementById("balBag").innerText = user.bag.toLocaleString();
-      document.getElementById("balPol").innerText = user.pol.toFixed(2);
-      document.getElementById("balUsdt").innerText = user.usdt.toFixed(2);
-      document.getElementById("walletShort").innerText = user.wallet;
+  <div id="battleSection" class="section">
+    <h2>🏆 Змагання</h2>
+    <p>Оберіть тип змагання:</p>
+    <button class="btn" onclick="startCompetition('speed')">🐾 Біг</button>
+    <button class="btn" onclick="startCompetition('strength')">💪 Сила</button>
+    <button class="btn" onclick="startCompetition('jump')">🦘 Стрибки</button>
+    <div id="competitionResult"></div>
+  </div><script>
+  let user = {
+    email: "",
+    bag: 100000,
+    pol: 5000,
+    usdt: 300,
+    dogs: []
+  };
 
-      document.getElementById("myPetInfo").innerHTML =
-        `<p>🐕 ${user.pet.name} — Lv. ${user.pet.level} — 💥 ${user.pet.power} — 🎖️ ${user.pet.rarity}</p>`;
+  function registerEmail() {
+    const email = document.getElementById("emailInput").value;
+    if (!email.includes("@")) return alert("Некоректний email");
+    user.email = email;
+    localStorage.setItem("bonkUser_" + email, JSON.stringify(user));
+    alert("Успішний вхід: " + email);
+    updateBalances();
+    updateDogList();
+  }
 
-      renderLeaderboard();
-    }    function claimBonus() {
-      const today = new Date().toISOString().slice(0, 10);
-      if (user.lastBonusDay === today) {
-        document.getElementById("bonusMessage").innerText = "Бонус вже отримано сьогодні!";
-        return;
-      }
+  function showSection(id) {
+    document.querySelectorAll(".section").forEach(s => s.style.display = "none");
+    document.getElementById(id).style.display = "block";
+  }
 
-      user.lastBonusDay = today;
-      user.bonusStreak += 1;
+  function updateBalances() {
+    document.getElementById("balanceBAG").innerText = user.bag;
+    document.getElementById("balancePOL").innerText = user.pol;
+    document.getElementById("balanceUSDT").innerText = user.usdt;
+  }
 
-      let reward = 1000;
-      if (user.bonusStreak >= 10) reward += 10000;
-      if (user.bonusStreak >= 20) reward += 25000;
-      if (user.bonusStreak >= 30) reward += 50000;
-      if (user.bonusStreak >= 40) reward += 100000;
-      if (user.bonusStreak >= 50) reward += 150000;
-      if (user.bonusStreak >= 100) reward += 250000;
+  function claimDailyBonus() {
+    const bonusAmount = 5000;
+    user.bag += bonusAmount;
+    updateBalances();
+    document.getElementById("bonusMessage").innerText = `Ви отримали ${bonusAmount} BAG за щоденний вхід!`;
+    localStorage.setItem("bonkUser_" + user.email, JSON.stringify(user));
+  }
 
-      user.bag += reward;
-      document.getElementById("bonusMessage").innerText = `🎉 Ви отримали ${reward.toLocaleString()} BAG!`;
-      saveUser();
-    }
+  function performMarketAction() {
+    const action = document.getElementById("marketAction").value;
+    const rarity = document.getElementById("raritySelect").value;
+    let cost = {
+      normal: 100000,
+      unique: 500000,
+      rare: 1000000,
+      legendary: 10000000
+    }[rarity];
 
-    function getPowerUp() {
-      const today = new Date().toISOString().slice(0, 10);
-      if (user.lastPowerUp === today) {
-        document.getElementById("dailyPowerUpMsg").innerText = "Сьогодні вже прокачано!";
-        return;
-      }
-
-      const bonuses = [
-        { stat: "power", value: 2 },
-        { stat: "level", value: 1 },
-        { stat: "bag", value: 500 }
-      ];
-      const choice = bonuses[Math.floor(Math.random() * bonuses.length)];
-
-      if (choice.stat === "power") user.pet.power += choice.value;
-      if (choice.stat === "level") user.pet.level += choice.value;
-      if (choice.stat === "bag") user.bag += choice.value;
-
-      user.lastPowerUp = today;
-      document.getElementById("dailyPowerUpMsg").innerText = `+${choice.value} до ${choice.stat.toUpperCase()}`;
-      saveUser();
-    }
-
-    function openBox() {
-      const types = ["common", "unique", "rare", "legend"];
-      const rand = Math.random();
-      let rarity = "common";
-      if (rand > 0.98) rarity = "legend";
-      else if (rand > 0.9) rarity = "rare";
-      else if (rand > 0.7) rarity = "unique";
-
-      document.getElementById("boxResult").innerText = `📦 Ви отримали ${rarity.toUpperCase()} пса!`;
-    }
-
-    function buyDog(type) {
-      const prices = {
-        common: 100000,
-        unique: 500000,
-        rare: 1000000,
-        legend: 10000000
-      };
-
-      if (user.bag < prices[type]) {
-        alert("Недостатньо BAG!");
-        return;
-      }
-
-      user.bag -= prices[type];
-      user.pet = {
-        name: `BONK ${type.toUpperCase()} DOG`,
-        level: 1,
-        power: 10 + Math.floor(Math.random() * 10),
-        rarity: type
-      };
-      alert(`Ви купили нового пса: ${user.pet.name}`);
-      saveUser();
-    }
-
-    function fight() {
-      const win = Math.random() < 0.5 + user.pet.level * 0.01;
-      let msg = "";
-      if (win) {
-        const reward = 1000 + user.pet.power * 10;
-        user.bag += reward;
-        msg = `🥇 Ви виграли! Нагорода: ${reward} BAG`;
+    if (action === "buy") {
+      if (user.bag >= cost) {
+        user.bag -= cost;
+        user.dogs.push({ rarity });
+        updateBalances();
+        updateDogList();
+        document.getElementById("marketMessage").innerText = `Ви купили ${rarity} пса!`;
       } else {
-        msg = `😵 Ви програли.`;
+        document.getElementById("marketMessage").innerText = "Недостатньо BAG!";
       }
-      document.getElementById("fightResult").innerText = msg;
-      updateLeaderboard();
-      saveUser();
+    } else if (action === "sell") {
+      const index = user.dogs.findIndex(d => d.rarity === rarity);
+      if (index !== -1) {
+        user.dogs.splice(index, 1);
+        user.bag += cost;
+        updateBalances();
+        updateDogList();
+        document.getElementById("marketMessage").innerText = `Ви продали ${rarity} пса!`;
+      } else {
+        document.getElementById("marketMessage").innerText = `У вас немає ${rarity} пса для продажу.`;
+      }
     }
 
-    function updateLeaderboard() {
-      const board = JSON.parse(localStorage.getItem("bonkLeaderboard")) || [];
-      board.push({ name: user.wallet, score: user.pet.level * 100 + user.pet.power });
-      board.sort((a, b) => b.score - a.score);
-      localStorage.setItem("bonkLeaderboard", JSON.stringify(board.slice(0, 10)));
+    localStorage.setItem("bonkUser_" + user.email, JSON.stringify(user));
+  }
+
+  function updateDogList() {
+    const container = document.getElementById("myDogsList");
+    container.innerHTML = "";
+    if (user.dogs.length === 0) {
+      container.innerHTML = "<p>У вас немає псів.</p>";
+      return;
+    }
+    user.dogs.forEach((dog, index) => {
+      const p = document.createElement("p");
+      p.innerText = `${index + 1}. 🐕 Пес — ${dog.rarity}`;
+      container.appendChild(p);
+    });
+  }
+
+  function startCompetition(type) {
+    const result = document.getElementById("competitionResult");
+    if (user.dogs.length === 0) {
+      result.innerText = "У вас немає пса для змагання.";
+      return;
+    }
+    const win = Math.random() < 0.5;
+    if (win) {
+      const reward = 10000;
+      user.bag += reward;
+      updateBalances();
+      result.innerText = `Ви виграли в змаганні (${type}) і отримали ${reward} BAG!`;
+    } else {
+      result.innerText = `На жаль, ваш пес програв змагання (${type}).`;
     }
 
-    function renderLeaderboard() {
-      const board = JSON.parse(localStorage.getItem("bonkLeaderboard")) || [];
-      document.getElementById("leaderboardList").innerHTML = board.map(
-        (entry, index) => `<p>${index + 1}. ${entry.name} — ${entry.score}</p>`
-      ).join("");
+    localStorage.setItem("bonkUser_" + user.email, JSON.stringify(user));
+  }
+
+  function depositTokens() {
+    user.bag += 100000;
+    updateBalances();
+    alert("Ви ввели 100000 BAG");
+    localStorage.setItem("bonkUser_" + user.email, JSON.stringify(user));
+  }
+
+  function withdrawTokens() {
+    if (user.bag >= 100000) {
+      user.bag -= 100000;
+      updateBalances();
+      alert("Ви вивели 100000 BAG");
+      localStorage.setItem("bonkUser_" + user.email, JSON.stringify(user));
+    } else {
+      alert("Недостатньо BAG для виводу");
+    }
+  }
+
+  window.onload = function () {
+    const email = document.getElementById("emailInput").value;
+    if (email && localStorage.getItem("bonkUser_" + email)) {
+      user = JSON.parse(localStorage.getItem("bonkUser_" + email));
+      updateBalances();
+      updateDogList();
     }
 
-    window.onload = () => {
-      renderAll();
-    };
-  </script>
+    const canvas = document.getElementById("qrCanvas");
+    if (canvas.getContext) {
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#000";
+      ctx.font = "16px Arial";
+      ctx.fillText("QR: адреса-гравця", 10, 30);
+    }
+  }
+</script>
 </body>
 </html>
