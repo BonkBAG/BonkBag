@@ -5,7 +5,7 @@
   <title>BONK PET</title>
   <style>
     body {
-      background-image: url('cosmic-bonkpet-bg.jpg');
+      background-image: url('https://raw.githubusercontent.com/BonkBAG/BonkBag/main/cosmic-bonkpet-bg.jpg');
       background-size: cover;
       background-repeat: no-repeat;
       background-position: center;
@@ -68,15 +68,26 @@
       margin-top: 0;
     }
 
-    .label {
-      font-weight: bold;
+    #createDogForm {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+      margin-right: 10px;
     }
   </style>
 </head>
 <body>
 
   <div class="sidebar">
-    <p class="label">💰 Баланс</p>
+    <p><strong>💰 Баланс</strong></p>
     <p>BAG: <span id="bag">0</span></p>
     <p>POL: 2.00</p>
     <p>USDT: 50.00</p>
@@ -84,6 +95,12 @@
   </div>
 
   <div class="container">
+    <div id="createDogForm" style="display: none;">
+      <h3>🎉 Вітаємо! Назвіть свого першого пса:</h3>
+      <input type="text" id="dogNameInput" placeholder="Ім’я пса">
+      <button class="btn" onclick="createFirstDog()">Створити</button>
+    </div>
+
     <div class="section">
       <h2>🎁 Бонус + 📦 Ринок</h2>
       <button class="btn" onclick="getBonus()">Отримати бонус</button>
@@ -115,8 +132,106 @@
       <p>🟥 Змагання поки не активні. Очікуйте оновлення!</p>
     </div>
   </div>
+  <div class="section">
+  <h2>🛒 Маркет</h2>
+  <button class="btn" onclick="sellDog()">Продати пса (100 000 BAG)</button>
+  <p id="marketSellMsg"></p>
 
-<script>
+  <h3>🐶 Собаки на продаж:</h3>
+  <div id="marketList"></div>
+</div>
+
+<script>let market = [];
+
+function saveMarket() {
+  localStorage.setItem("bonkPetMarket", JSON.stringify(market));
+}
+
+function loadMarket() {
+  const data = localStorage.getItem("bonkPetMarket");
+  if (data) market = JSON.parse(data);
+}
+
+function userAddress() {
+  // Унікальний ідентифікатор користувача для локального браузера
+  let id = localStorage.getItem("bonkUserId");
+  if (!id) {
+    id = "user_" + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem("bonkUserId", id);
+  }
+  return id;
+}
+
+function sellDog() {
+  if (!user.dog) {
+    document.getElementById("marketSellMsg").innerText = "У вас немає пса для продажу.";
+    return;
+  }
+
+  const dogForSale = {
+    ...user.dog,
+    seller: userAddress(),
+    price: 100000
+  };
+
+  market.push(dogForSale);
+  user.dog = null;
+  saveMarket();
+  saveUser();
+  updateDogInfo();
+  updateMarketList();
+  document.getElementById("marketSellMsg").innerText = "✅ Пса виставлено на продаж!";
+}
+
+function updateMarketList() {
+  const container = document.getElementById("marketList");
+  container.innerHTML = "";
+
+  if (market.length === 0) {
+    container.innerHTML = "<p>Наразі немає псів на продаж.</p>";
+    return;
+  }
+
+  market.forEach((dog, index) => {
+    const div = document.createElement("div");
+    div.className = "dog";
+    div.innerHTML = `
+      🐶 ${dog.name} — ${dog.type.toUpperCase()} — Lv.${dog.level} — ⭐${dog.stars} <br>
+      Продавець: ${dog.seller}<br>
+      <button class="btn" onclick="buyDogFromMarket(${index})">Купити за ${dog.price} BAG</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function buyDogFromMarket(index) {
+  const dog = market[index];
+  if (user.bag < dog.price) {
+    alert("Недостатньо BAG для покупки.");
+    return;
+  }
+
+  if (dog.seller === userAddress()) {
+    alert("Ви не можете купити свого пса.");
+    return;
+  }
+
+  user.bag -= dog.price;
+  user.dog = {
+    name: dog.name,
+    type: dog.type,
+    level: dog.level,
+    stars: dog.stars
+  };
+
+  market.splice(index, 1);
+  saveMarket();
+  saveUser();
+  updateBagDisplay();
+  updateDogInfo();
+  updateMarketList();
+  alert("✅ Ви придбали нового пса!");
+}
   let user = {
     bag: 7000,
     dog: null,
@@ -129,7 +244,30 @@
 
   function loadUser() {
     const data = localStorage.getItem("bonkPetUser");
-    if (data) user = JSON.parse(data);
+    if (data) {
+      user = JSON.parse(data);
+    }
+
+    // якщо нема собаки — просимо створити
+    if (!user.dog) {
+      document.getElementById("createDogForm").style.display = "block";
+    }
+  }
+
+  function createFirstDog() {
+    const name = document.getElementById("dogNameInput").value.trim();
+    if (!name) return alert("Введіть ім’я пса!");
+
+    user.dog = {
+      name: name,
+      type: "common",
+      level: 1,
+      stars: 10
+    };
+
+    saveUser();
+    updateDogInfo();
+    document.getElementById("createDogForm").style.display = "none";
   }
 
   function updateBagDisplay() {
@@ -143,14 +281,14 @@
       container.innerHTML = "<p>У вас немає пса.</p>";
       return;
     }
-    const { type, level, stars } = user.dog;
+    const { name, type, level, stars } = user.dog;
     const types = {
       common: "COMMON",
       unique: "UNIQUE",
       rare: "RARE",
       legendary: "LEGEND"
     };
-    container.innerHTML = `🐕 BONK ${types[type]} DOG — Lv. ${level} — ⭐ ${stars} — <em>${type}</em>`;
+    container.innerHTML = `🐕 ${name} — BONK ${types[type]} DOG — Lv. ${level} — ⭐ ${stars} — <em>${type}</em>`;
   }
 
   function getBonus() {
@@ -163,7 +301,12 @@
   function openBox() {
     const rarities = ["common", "unique", "rare"];
     const rarity = rarities[Math.floor(Math.random() * rarities.length)];
-    user.dog = { type: rarity, level: 1, stars: 10 };
+    user.dog = {
+      name: user.dog.name,
+      type: rarity,
+      level: 1,
+      stars: 10
+    };
     updateDogInfo();
     document.getElementById("boxMsg").innerHTML = `🎉 Ви отримали <strong>${rarity.toUpperCase()}</strong> пса!`;
     saveUser();
@@ -172,7 +315,12 @@
   function buyDog(type, cost) {
     if (user.bag >= cost) {
       user.bag -= cost;
-      user.dog = { type: type, level: 1, stars: 10 };
+      user.dog = {
+        name: user.dog.name,
+        type: type,
+        level: 1,
+        stars: 10
+      };
       updateBagDisplay();
       updateDogInfo();
       document.getElementById("marketMsg").innerText = `Ви купили ${type} пса!`;
@@ -200,7 +348,7 @@
     saveUser();
   }
 
-  // ініціалізація
+  // Ініціалізація
   loadUser();
   updateBagDisplay();
   updateDogInfo();
